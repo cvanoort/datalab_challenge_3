@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "datalab_challenge_3"
+version = "0.1.0"
+license="MIT"
+description = "Investigating COVID-19 and mobility."
+authors = ["Colin Van Oort <cvanoort@uvm.edu>"]
+readme = "README.md"
+repository = "https://github.com/cvanoort/datalab_challenge_3"
+classifiers=[
+    # Trove classifiers
+    # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+include = [
+    "LICENSE",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+matplotlib = "*"
+numpy = "*"
+pandas = "^1"
+seaborn = "*"
+
+[tool.poetry.dev-dependencies]
+black = {version = "*", allow-prereleases = true}
+isort = "*"
+
+# isort config taken from https://github.com/psf/black
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[build-system]
+requires = ["poetry>=1.0"]
+build-backend = "poetry.masonry.api"
