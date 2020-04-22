@@ -46,6 +46,37 @@ def load_google_covid19_mobility(
     return df
 
 
+def clean_google_covid19_mobility(
+        df,
+        mode="us",
+):
+    df.rename(columns=lambda x: x.replace("_percent_change_from_baseline", ""), inplace=True)
+
+    if mode == "us":
+        # Select the rows associated with the US (aggregated)
+        us_ind = (df.country_region_code == "US") & df.sub_region_1.isna() & df.sub_region_2.isna()
+        us_df = df[us_ind].dropna(axis=1).drop(["country_region_code", "country_region"], axis=1)
+
+        # Clean up the column labels for a better legend later
+        us_df.rename(columns=lambda x: x.replace("_", " ").title(), inplace=True)
+        us_df = us_df.set_index("Date").stack().reset_index()
+        us_df.columns = ["Date", "Mobility Type", "Relative Change (%)"]
+        return us_df
+    elif mode == "us_states":
+        us_states_ind = (df.country_region_code == "US") & ~df.sub_region_1.isna() & df.sub_region_2.isna()
+        us_states_df = df[us_states_ind].dropna(axis=1).drop(["country_region_code", "country_region"], axis=1)
+        # Clean up the column labels for a better legend later
+        us_states_df.rename(columns=lambda x: x.replace("_", " ").title(), inplace=True)
+        us_states_df = us_states_df.set_index(["Date", "Sub Region 1"]).stack().reset_index()
+        us_states_df.columns = ["Date", "Region", "Mobility Type", "Relative Change (%)"]
+        return us_states_df
+    elif mode == "us_counties":
+        # counties_ind = (df.country_region_code == "US") & ~df.sub_region_1.isna() & ~df.sub_region_2.isna()
+        raise NotImplementedError()
+    else:
+        raise ValueError(f"Unexpected value for mode: {mode}.")
+
+
 if __name__ == '__main__':
     # Prevent random tkinter errors:
     #     https://github.com/pandas-profiling/pandas-profiling/issues/373
