@@ -24,6 +24,7 @@ python = "^3.7"
 matplotlib = "*"
 numpy = "*"
 pandas = "^1"
+pandas-profiling = "*"
 seaborn = "*"
 
 [tool.poetry.dev-dependencies]

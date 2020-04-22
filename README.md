@@ -16,3 +16,7 @@ correlations with the number of cases reported and deaths.”
 - Baxter Worthing
 - Colin Van Oort
 - Erika Bueno
+
+## Google Data Citation
+Google LLC "Google COVID-19 Community Mobility Reports."
+https://www.google.com/covid19/mobility/ Accessed: 2020/04/21.
