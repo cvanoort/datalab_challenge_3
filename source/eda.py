@@ -10,11 +10,7 @@ def main():
     us_df = data.clean_google_covid19_mobility(df, mode="us")
     fig, ax = plt.subplots()
     sns.lineplot(
-        x="Date",
-        y="Relative Change (%)",
-        hue="Mobility Type",
-        data=us_df,
-        ax=ax,
+        x="Date", y="Relative Change (%)", hue="Mobility Type", data=us_df, ax=ax,
     )
     plt.title("Aggregated US Mobility Patterns")
     plt.xticks(rotation=45, ha="right", va="top")
@@ -42,5 +38,5 @@ def main():
     plt.close(fig)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
