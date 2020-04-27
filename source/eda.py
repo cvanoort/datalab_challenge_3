@@ -9,33 +9,59 @@ import data
 
 def main():
     doubling_rates = data.get_covid_doubling_rates().stack().reset_index()
-    doubling_rates.columns = ["Days Since First Case", "Region", "Days to Double"]
+    doubling_rates.columns = ["Days Since First Case", "Region", "Days till Cases Double"]
     fig, ax = plt.subplots()
     sns.lineplot(
         x="Days Since First Case",
-        y="Days to Double",
+        y="Days till Cases Double",
         hue="Region",
         data=doubling_rates,
         ax=ax,
         legend=False,
     )
-    plt.title("Doubling Rates by State/Territory")
-    plt.xticks(rotation=45, ha="right", va="top")
+    plt.title("Case Doubling Rates by State/Territory")
     plt.yscale("log")
     plt.tight_layout()
-    plt.savefig("../results/state_doubling.png")
+    plt.savefig("../results/state_case_doubling.png")
     plt.close(fig)
 
     double_bars = doubling_rates.groupby(["Region"]).mean().reset_index()
-    double_bars.sort_values("Days to Double", ascending=True, inplace=True)
+    double_bars.sort_values("Days till Cases Double", ascending=True, inplace=True)
     fig, ax = plt.subplots()
     sns.barplot(
-        x="Days to Double", y="Region", data=double_bars, ax=ax,
+        x="Days till Cases Double", y="Region", data=double_bars, ax=ax,
     )
-
-    plt.title("Doubling Rates by State/Territory")
+    plt.title("Case Doubling Rates by State/Territory")
     plt.tight_layout()
-    plt.savefig("../results/state_doubling_bars.png")
+    plt.savefig("../results/state_case_doubling_bars.png")
+    plt.close(fig)
+
+    doubling_rates = data.get_covid_doubling_rates(indicator_col="death").stack().reset_index()
+    doubling_rates.columns = ["Days Since First Death", "Region", "Days till Deaths Double"]
+    fig, ax = plt.subplots()
+    sns.lineplot(
+        x="Days Since First Death",
+        y="Days till Deaths Double",
+        hue="Region",
+        data=doubling_rates,
+        ax=ax,
+        legend=False,
+    )
+    plt.title("Death Doubling Rates by State/Territory")
+    plt.yscale("log")
+    plt.tight_layout()
+    plt.savefig("../results/state_death_doubling.png")
+    plt.close(fig)
+
+    double_bars = doubling_rates.groupby(["Region"]).mean().reset_index()
+    double_bars.sort_values("Days till Deaths Double", ascending=True, inplace=True)
+    fig, ax = plt.subplots()
+    sns.barplot(
+        x="Days till Deaths Double", y="Region", data=double_bars, ax=ax,
+    )
+    plt.title("Death Doubling Rates by State/Territory")
+    plt.tight_layout()
+    plt.savefig("../results/state_death_doubling_bars.png")
     plt.close(fig)
 
     us_df = data.load_google_covid19_mobility(mode="us")

@@ -122,6 +122,9 @@ def clean_covid_case_data(df, mode="us"):
             lambda x: us.states.lookup(x).name if us.states.lookup(x) else x
         )
         df.state = df.state.apply(lambda x: "District of Columbia" if x == "DC" else x)
+        # Drop the territories so we can focus on the states and DC.
+        indicator = df.state.apply(lambda x: True if us.states.lookup(x) in us.STATES or (x == "District of Columbia") else False)
+        df = df[indicator]
         df.rename(columns={"state": "Region"}, inplace=True)
 
     return df
