@@ -1,7 +1,8 @@
 from pathlib import Path
-import numpy as np
 
+import numpy as np
 import pandas as pd
+
 import us
 
 
@@ -123,11 +124,60 @@ def clean_covid_case_data(df, mode="us"):
         )
         df.state = df.state.apply(lambda x: "District of Columbia" if x == "DC" else x)
         # Drop the territories so we can focus on the states and DC.
-        indicator = df.state.apply(lambda x: True if us.states.lookup(x) in us.STATES or (x == "District of Columbia") else False)
+        indicator = df.state.apply(
+            lambda x: True
+            if us.states.lookup(x) in us.STATES or (x == "District of Columbia")
+            else False
+        )
         df = df[indicator]
         df.rename(columns={"state": "Region"}, inplace=True)
 
     return df
+
+
+def get_covid_doubling_rates(
+    df=None, group_col="Region", indicator_col="positive", window_size=7
+):
+    if df is None:
+        df = load_covid_case_data(mode="states")
+
+    chunks = time_normalize(df, group_col=group_col, indicator_col=indicator_col)
+
+    doubling_rates = dict()
+    for label, chunk in chunks.items():
+        doubling_rates[label] = chunk[indicator_col] / (
+            1
+            + chunk[indicator_col + "Increase"]
+            .clip(0)[::-1]
+            .rolling(window_size)
+            .mean()[::-1]
+        )
+
+    chunk_len = (df[indicator_col] > 0).groupby(df[group_col]).sum().astype(int).max()
+    drs = np.zeros((chunk_len, len(doubling_rates)), dtype=float)
+    drs[:] = np.nan
+    columns, values = zip(*doubling_rates.items())
+    for i, vs in enumerate(values):
+        drs[: len(vs), i] = vs
+
+    doubling_rates = pd.DataFrame(drs, columns=columns)
+    doubling_rates.index.name = "Days Since First Case"
+    return doubling_rates
+
+
+def start_to_peak_time(df=None, group_col="Region", indicator_col="positive"):
+    if df is None:
+        df = load_covid_case_data(mode="states")
+
+    chunks = time_normalize(df, group_col=group_col, indicator_col=indicator_col)
+    time_to_peak = dict()
+    for label, chunk in chunks.items():
+        peak = chunk[indicator_col].argmax()
+        if peak == len(chunk) - 1:
+            label += "*"
+        time_to_peak[label] = int(peak)
+
+    return time_to_peak
 
 
 def time_normalize(df, group_col="Region", indicator_col="positive"):
@@ -145,34 +195,18 @@ def time_normalize(df, group_col="Region", indicator_col="positive"):
     return chunks
 
 
-def get_covid_doubling_rates(group_col="Region", indicator_col="positive"):
-    state_case_df = load_covid_case_data(mode="states")
-    chunks = time_normalize(
-        state_case_df, group_col=group_col, indicator_col=indicator_col
-    )
-
-    doubling_rates = dict()
-    for label, chunk in chunks.items():
-        doubling_rates[label] = chunk[indicator_col] / (
-            1 + chunk[indicator_col + "Increase"].clip(0).rolling(7).mean()
-        )
-
-    chunk_len = (
-        (state_case_df[indicator_col] > 0)
-        .groupby(state_case_df[group_col])
-        .sum()
-        .astype(int)
-        .max()
-    )
-    drs = np.zeros((chunk_len, len(doubling_rates)), dtype=float)
-    drs[:] = np.nan
-    columns, values = zip(*doubling_rates.items())
-    for i, vs in enumerate(values):
-        drs[: len(vs), i] = vs
-
-    doubling_rates = pd.DataFrame(drs, columns=columns)
-    doubling_rates.index.name = "Days Since First Case"
-    return doubling_rates
+def first_occurrence_date(df, group_col="Region", indicator_col="positive"):
+    ind, val = [], []
+    for label, chunk in df.groupby(group_col):
+        chunk.set_index("Date", inplace=True)
+        chunk.sort_index(inplace=True)
+        chunk = chunk[chunk[indicator_col] > 0]
+        if len(chunk):
+            ind.append(label)
+            val.append(chunk.index[0])
+        else:
+            print(f"No positive cases in {label}")
+    return pd.Series(data=val, index=ind)
 
 
 def stale_file(path, update_window=pd.Timedelta(days=1)):

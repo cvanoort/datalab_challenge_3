@@ -1,15 +1,33 @@
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 import numpy as np
+import pandas as pd
+import seaborn as sns
 from scipy import stats
 
 import data
 
 
 def main():
-    doubling_rates = data.get_covid_doubling_rates().stack().reset_index()
-    doubling_rates.columns = ["Days Since First Case", "Region", "Days till Cases Double"]
+    df = data.load_covid_case_data(mode="states")
+
+    peak_times = data.start_to_peak_time(df, indicator_col="positiveIncrease")
+    states, peak_times = [
+        np.array(x)
+        for x in zip(*sorted(peak_times.items(), key=lambda x: x[1], reverse=True))
+    ]
+    peak_times = pd.DataFrame({"State": states, "Days to Case Growth Peak": peak_times})
+    fig, ax = plt.subplots(figsize=(5, 8))
+    sns.barplot(x="Days to Case Growth Peak", y="State", data=peak_times)
+    plt.tight_layout()
+    plt.savefig("../results/state_case_growth_peak.png")
+    plt.close(fig)
+
+    doubling_rates = data.get_covid_doubling_rates(df).stack().reset_index()
+    doubling_rates.columns = [
+        "Days Since First Case",
+        "Region",
+        "Days till Cases Double",
+    ]
     fig, ax = plt.subplots()
     sns.lineplot(
         x="Days Since First Case",
@@ -19,7 +37,7 @@ def main():
         ax=ax,
         legend=False,
     )
-    plt.title("Case Doubling Rates by State/Territory")
+    plt.title("Case Doubling Rates by State")
     plt.yscale("log")
     plt.tight_layout()
     plt.savefig("../results/state_case_doubling.png")
@@ -27,17 +45,24 @@ def main():
 
     double_bars = doubling_rates.groupby(["Region"]).mean().reset_index()
     double_bars.sort_values("Days till Cases Double", ascending=True, inplace=True)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(5, 8))
     sns.barplot(
         x="Days till Cases Double", y="Region", data=double_bars, ax=ax,
     )
-    plt.title("Case Doubling Rates by State/Territory")
+    plt.title("Case Doubling Rates by State")
+    plt.ylabel("State")
     plt.tight_layout()
     plt.savefig("../results/state_case_doubling_bars.png")
     plt.close(fig)
 
-    doubling_rates = data.get_covid_doubling_rates(indicator_col="death").stack().reset_index()
-    doubling_rates.columns = ["Days Since First Death", "Region", "Days till Deaths Double"]
+    doubling_rates = (
+        data.get_covid_doubling_rates(df, indicator_col="death").stack().reset_index()
+    )
+    doubling_rates.columns = [
+        "Days Since First Death",
+        "Region",
+        "Days till Deaths Double",
+    ]
     fig, ax = plt.subplots()
     sns.lineplot(
         x="Days Since First Death",
@@ -47,7 +72,7 @@ def main():
         ax=ax,
         legend=False,
     )
-    plt.title("Death Doubling Rates by State/Territory")
+    plt.title("Death Doubling Rates by State")
     plt.yscale("log")
     plt.tight_layout()
     plt.savefig("../results/state_death_doubling.png")
@@ -55,11 +80,11 @@ def main():
 
     double_bars = doubling_rates.groupby(["Region"]).mean().reset_index()
     double_bars.sort_values("Days till Deaths Double", ascending=True, inplace=True)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(5, 8))
     sns.barplot(
         x="Days till Deaths Double", y="Region", data=double_bars, ax=ax,
     )
-    plt.title("Death Doubling Rates by State/Territory")
+    plt.ylabel("State")
     plt.tight_layout()
     plt.savefig("../results/state_death_doubling_bars.png")
     plt.close(fig)
